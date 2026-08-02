@@ -211,9 +211,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for Conventional Commits, PR titles, and 
 
 ## Releasing / Deploy
 
-This library is published to Packagist as `m0d1xd/tap-company-sdk`. Versions are cut automatically from Conventional Commits on `main` via GitHub Actions (release-please).
+This library is published to Packagist as `m0d1xd/tap-company-sdk`. Versions are cut automatically from Conventional Commits on `main` via release-please; each GitHub Release triggers a Packagist sync workflow.
 
-Full setup and day-to-day steps: **[docs/deploy.md](docs/deploy.md)**.
+**Integrate Packagist with GitHub Actions:** add `PACKAGIST_USERNAME` and `PACKAGIST_TOKEN` secrets, then follow **[docs/deploy.md](docs/deploy.md)**.
 
 ## License
 
