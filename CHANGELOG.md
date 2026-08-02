@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/M0D1xD/tap-company-sdk/compare/v1.0.1...v1.1.0) (2026-08-02)
+
+
+### Features
+
+* allow programmatic Tap config via Tap::configure ([83265ab](https://github.com/M0D1xD/tap-company-sdk/commit/83265ab82cfd385e714516fdb6a9ede103ad139c))
+* programmatic Tap configuration ([87fd6ee](https://github.com/M0D1xD/tap-company-sdk/commit/87fd6eef0d5e6ed553e053cc7f26a9b75ca6a821))
+
 ## [1.0.1](https://github.com/M0D1xD/tap-company-sdk/compare/v1.0.0...v1.0.1) (2026-08-02)
 
 
