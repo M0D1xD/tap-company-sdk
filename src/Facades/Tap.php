@@ -48,6 +48,14 @@ use TapCompany\LaravelSdk\Webhooks\SignatureValidator;
  */
 class Tap extends Facade
 {
+    /**
+     * @param  array<string, mixed>  $config
+     */
+    public static function configure(array $config): void
+    {
+        \TapCompany\LaravelSdk\Tap::configure($config);
+    }
+
     protected static function getFacadeAccessor(): string
     {
         return \TapCompany\LaravelSdk\Tap::class;

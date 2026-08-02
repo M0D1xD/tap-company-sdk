@@ -24,7 +24,9 @@ class TapHttpClient
         protected int $retrySleep = 200,
     ) {
         if ($this->secretKey === '') {
-            throw new TapException('Tap secret key is not configured. Set TAP_SECRET_KEY.');
+            throw new TapException(
+                'Tap secret key is not configured. Set TAP_SECRET_KEY, config(\'tap.secret_key\'), or Tap::configure([\'secret_key\' => \'...\']).',
+            );
         }
     }
 

@@ -63,6 +63,21 @@ class Tap
     ) {
     }
 
+    /**
+     * Merge values into the Tap config at runtime (secret key, webhook path, etc.).
+     *
+     * Prefer calling this from a service provider before the Tap client is resolved
+     * (and before the application has finished booting, for webhook route options).
+     *
+     * @param  array<string, mixed>  $config
+     */
+    public static function configure(array $config): void
+    {
+        config([
+            'tap' => array_replace_recursive(config('tap', []), $config),
+        ]);
+    }
+
     public function client(): TapHttpClient
     {
         return $this->client;
