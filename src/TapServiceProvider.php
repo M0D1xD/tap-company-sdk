@@ -45,8 +45,11 @@ class TapServiceProvider extends ServiceProvider
             ], 'tap-config');
         }
 
-        if (config('tap.webhook.enabled')) {
-            $this->loadRoutesFrom(__DIR__.'/../routes/webhooks.php');
-        }
+        // Defer so AppServiceProvider::boot() / Tap::configure() can still change path/middleware.
+        $this->app->booted(function (): void {
+            if (config('tap.webhook.enabled')) {
+                $this->loadRoutesFrom(__DIR__.'/../routes/webhooks.php');
+            }
+        });
     }
 }

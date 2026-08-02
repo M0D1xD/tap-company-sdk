@@ -20,6 +20,10 @@ php artisan vendor:publish --tag=tap-config
 
 ## Configuration
 
+You can supply any Tap setting via **`.env`**, the **published config file**, or **`Tap::configure()`** in code. The SDK always reads `config('tap.*')` — `env()` is only a convenience default in the config file.
+
+### Environment variables
+
 Copy [`.env.example`](.env.example) into your Laravel app `.env` (or merge the `TAP_*` keys):
 
 ```env
@@ -31,7 +35,39 @@ TAP_WEBHOOK_ENABLED=true
 TAP_WEBHOOK_PATH=tap/webhook
 ```
 
-Authentication uses `Authorization: Bearer {TAP_SECRET_KEY}` against Tap’s REST API.
+### Published config
+
+After `php artisan vendor:publish --tag=tap-config`, edit `config/tap.php` and set values directly if you prefer not to use `.env`:
+
+```php
+'secret_key' => 'sk_test_xxx',
+'webhook' => [
+    'enabled' => true,
+    'path' => 'payments/tap/webhook',
+],
+```
+
+### Programmatic configuration
+
+Set any option at runtime from a service provider (before the Tap client is first resolved):
+
+```php
+use TapCompany\LaravelSdk\Facades\Tap;
+
+public function boot(): void
+{
+    Tap::configure([
+        'secret_key' => $this->resolveTapSecret(),
+        'merchant_id' => 'merchant_xxx',
+        'webhook' => [
+            'enabled' => true,
+            'path' => 'payments/tap/webhook',
+        ],
+    ]);
+}
+```
+
+Authentication uses `Authorization: Bearer {secret_key}` against Tap’s REST API.
 
 ## Object examples
 
