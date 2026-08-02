@@ -4,6 +4,8 @@ Full-platform Laravel SDK for the [Tap Payments API](https://developers.tap.comp
 
 Supports Laravel **12–13** and PHP **8.2+**.
 
+> **Disclaimer:** This package is **not** an official product of [Tap Company](https://www.tap.company) / Tap Payments, and is **not** affiliated with, endorsed by, or maintained by their developers. It is a personal, vibe-coded Laravel SDK built independently to provide a nicer developer experience on top of the public [Tap Payments API](https://developers.tap.company/reference/api-endpoint). Use at your own risk; API behavior and docs may change without notice.
+
 ## Installation
 
 ```bash
