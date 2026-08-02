@@ -2,7 +2,7 @@
 
 Full-platform Laravel SDK for the [Tap Payments API](https://developers.tap.company/reference/api-endpoint).
 
-Supports Laravel **10–13** and PHP **8.1+**.
+Supports Laravel **12–13** and PHP **8.2+**.
 
 ## Installation
 
