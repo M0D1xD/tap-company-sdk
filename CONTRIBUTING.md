@@ -38,7 +38,7 @@ Use this format for commits and PR titles:
 Mark a breaking change with `!` after the type/scope, and/or a footer:
 
 ```text
-feat!: drop support for Laravel 9
+feat!: drop support for Laravel 11
 
 fix: correct webhook signature check
 
