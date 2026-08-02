@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0](https://github.com/M0D1xD/tap-company-sdk/compare/v1.1.0...v1.2.0) (2026-08-02)
+
+
+### Features
+
+* add opt-in Tap request/response logging channel ([29d584b](https://github.com/M0D1xD/tap-company-sdk/commit/29d584b5bf599358b115b546ac38fa2fcadab62f))
+* request logging ([a2d6407](https://github.com/M0D1xD/tap-company-sdk/commit/a2d6407fa7530b3ba10bef099d53e922d9b92769))
+
 ## [1.1.0](https://github.com/M0D1xD/tap-company-sdk/compare/v1.0.1...v1.1.0) (2026-08-02)
 
 
