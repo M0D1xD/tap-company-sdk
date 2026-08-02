@@ -1,0 +1,61 @@
+{
+    "name": "m0d1xd/tap-company-sdk",
+    "description": "Full-platform Laravel SDK for the Tap Payments API",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "laravel",
+        "tap",
+        "tap-payments",
+        "payments",
+        "sdk"
+    ],
+    "authors": [
+        {
+            "name": "Tap Company SDK"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "illuminate/contracts": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/http": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/support": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/events": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/routing": "^10.0|^11.0|^12.0|^13.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^8.0|^9.0|^10.0|^11.0",
+        "phpunit/phpunit": "^10.5|^11.0|^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "TapCompany\\LaravelSdk\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "TapCompany\\LaravelSdk\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "TapCompany\\LaravelSdk\\TapServiceProvider"
+            ],
+            "aliases": {
+                "Tap": "TapCompany\\LaravelSdk\\Facades\\Tap"
+            }
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
+    }
+}

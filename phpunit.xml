@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         cacheDirectory=".phpunit.cache"
+>
+    <testsuites>
+        <testsuite name="Tap Company Laravel SDK Test Suite">
+            <directory>tests</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>src</directory>
+        </include>
+    </source>
+    <php>
+        <env name="APP_KEY" value="base64:2fl+KtvkdphvQyE8f+8QdG0q8q1zqJm1qJm1qJm1qJm="/>
+        <env name="TAP_SECRET_KEY" value="sk_test_example"/>
+        <env name="TAP_PUBLIC_KEY" value="pk_test_example"/>
+        <env name="TAP_MERCHANT_ID" value="599424"/>
+        <env name="TAP_BASE_URL" value="https://api.tap.company/v2/"/>
+        <env name="TAP_WEBHOOK_ENABLED" value="true"/>
+    </php>
+</phpunit>
