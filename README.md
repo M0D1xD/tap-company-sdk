@@ -33,7 +33,12 @@ TAP_MERCHANT_ID=your_merchant_id
 TAP_BASE_URL=https://api.tap.company/v2/
 TAP_WEBHOOK_ENABLED=true
 TAP_WEBHOOK_PATH=tap/webhook
+TAP_LOGGING_ENABLED=true
 ```
+
+### Request logging
+
+Set `TAP_LOGGING_ENABLED=true` to write every outgoing API call and incoming webhook (method, URL/path, status, and payloads) to `storage/logs/tap.log` via the dedicated `tap` log channel. Disable bodies with `TAP_LOGGING_PAYLOADS=false`, or point `TAP_LOGGING_CHANNEL` at another Laravel channel (e.g. `stack`) if you prefer.
 
 ### Published config
 
