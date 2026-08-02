@@ -14,11 +14,14 @@ use TapCompany\LaravelSdk\Events\PayoutUpdated;
 use TapCompany\LaravelSdk\Events\RefundUpdated;
 use TapCompany\LaravelSdk\Events\TapWebhookReceived;
 use TapCompany\LaravelSdk\Exceptions\InvalidWebhookSignatureException;
+use TapCompany\LaravelSdk\Support\TapRequestLogger;
 
 class WebhookController extends Controller
 {
-    public function __construct(protected SignatureValidator $validator)
-    {
+    public function __construct(
+        protected SignatureValidator $validator,
+        protected TapRequestLogger $logger,
+    ) {
     }
 
     public function __invoke(Request $request): JsonResponse
@@ -27,10 +30,13 @@ class WebhookController extends Controller
         $payload = $request->all();
         $header = (string) config('tap.webhook.header', 'hashstring');
         $hash = $request->header($header) ?? $request->header(ucfirst($header));
+        $path = '/'.ltrim((string) config('tap.webhook.path', 'tap/webhook'), '/');
 
         try {
             $object = $this->validator->validateOrFail($payload, is_string($hash) ? $hash : null);
         } catch (InvalidWebhookSignatureException $exception) {
+            $this->logger->incoming($path, $payload, 400);
+
             return response()->json(['message' => $exception->getMessage()], 400);
         }
 
@@ -46,6 +52,8 @@ class WebhookController extends Controller
             'payout' => event(new PayoutUpdated($object)),
             default => null,
         };
+
+        $this->logger->incoming($path, $payload, 200);
 
         return response()->json(['received' => true]);
     }

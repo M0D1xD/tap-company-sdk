@@ -60,4 +60,23 @@ return [
         'header' => env('TAP_WEBHOOK_HASH_HEADER', 'hashstring'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Request Logging
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, outgoing API calls and incoming webhooks are written to
+    | the configured log channel (default: storage/logs/tap.log).
+    |
+    */
+
+    'logging' => [
+        'enabled' => (bool) env('TAP_LOGGING_ENABLED', false),
+        'channel' => env('TAP_LOGGING_CHANNEL', 'tap'),
+        'level' => env('TAP_LOGGING_LEVEL', 'debug'),
+        // Relative to storage/logs unless absolute; default tap.log
+        'path' => env('TAP_LOGGING_PATH', 'tap.log'),
+        'log_payloads' => (bool) env('TAP_LOGGING_PAYLOADS', true),
+    ],
+
 ];

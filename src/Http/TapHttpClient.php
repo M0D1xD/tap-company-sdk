@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Http;
 use TapCompany\LaravelSdk\Data\TapObject;
 use TapCompany\LaravelSdk\Exceptions\ApiRequestException;
 use TapCompany\LaravelSdk\Exceptions\TapException;
+use TapCompany\LaravelSdk\Support\TapRequestLogger;
 
 class TapHttpClient
 {
@@ -22,12 +23,15 @@ class TapHttpClient
         protected int $connectTimeout = 5,
         protected int $retryTimes = 2,
         protected int $retrySleep = 200,
+        protected ?TapRequestLogger $logger = null,
     ) {
         if ($this->secretKey === '') {
             throw new TapException(
                 'Tap secret key is not configured. Set TAP_SECRET_KEY, config(\'tap.secret_key\'), or Tap::configure([\'secret_key\' => \'...\']).',
             );
         }
+
+        $this->logger ??= new TapRequestLogger;
     }
 
     /**
@@ -74,6 +78,7 @@ class TapHttpClient
     public function postMultipart(string $path, array $payload = [], ?array $file = null, array $headers = []): TapObject
     {
         $request = $this->pendingRequest($headers);
+        $normalizedPath = $this->normalizePath($path);
 
         if ($file !== null) {
             $request->attach(
@@ -84,7 +89,9 @@ class TapHttpClient
         }
 
         /** @var Response $response */
-        $response = $request->post($this->normalizePath($path), $payload);
+        $response = $request->post($normalizedPath, $payload);
+
+        $this->logOutgoing('post', $normalizedPath, $payload, $response);
 
         return $this->toObject($response);
     }
@@ -96,12 +103,22 @@ class TapHttpClient
     public function download(string $path, array $payload = [], string $method = 'post', array $headers = []): string
     {
         $request = $this->pendingRequest($headers)->accept('*/*');
+        $normalizedPath = $this->normalizePath($path);
+        $method = strtolower($method);
 
         /** @var Response $response */
-        $response = match (strtolower($method)) {
-            'get' => $request->get($this->normalizePath($path), $payload),
-            default => $request->post($this->normalizePath($path), $payload),
+        $response = match ($method) {
+            'get' => $request->get($normalizedPath, $payload),
+            default => $request->post($normalizedPath, $payload),
         };
+
+        $this->logger?->outgoing(
+            $method,
+            $this->absoluteUrl($normalizedPath),
+            $payload,
+            $response->status(),
+            '[binary body omitted]',
+        );
 
         if ($response->failed()) {
             $body = $response->json();
@@ -127,15 +144,24 @@ class TapHttpClient
         array $headers = [],
     ): TapObject {
         $request = $this->pendingRequest($headers);
+        $normalizedPath = $this->normalizePath($path);
+        $method = strtolower($method);
 
         /** @var Response $response */
-        $response = match (strtolower($method)) {
-            'get' => $request->get($this->normalizePath($path), $query),
-            'post' => $request->post($this->normalizePath($path), $payload),
-            'put' => $request->put($this->normalizePath($path), $payload),
-            'delete' => $request->delete($this->normalizePath($path), $payload),
+        $response = match ($method) {
+            'get' => $request->get($normalizedPath, $query),
+            'post' => $request->post($normalizedPath, $payload),
+            'put' => $request->put($normalizedPath, $payload),
+            'delete' => $request->delete($normalizedPath, $payload),
             default => throw new TapException("Unsupported HTTP method [{$method}]."),
         };
+
+        $this->logOutgoing(
+            $method,
+            $normalizedPath,
+            $method === 'get' ? $query : $payload,
+            $response,
+        );
 
         return $this->toObject($response);
     }
@@ -179,6 +205,27 @@ class TapHttpClient
     protected function normalizePath(string $path): string
     {
         return ltrim($path, '/');
+    }
+
+    protected function absoluteUrl(string $path): string
+    {
+        return rtrim($this->baseUrl, '/').'/'.ltrim($path, '/');
+    }
+
+    /**
+     * @param  array<string, mixed>  $requestPayload
+     */
+    protected function logOutgoing(string $method, string $path, array $requestPayload, Response $response): void
+    {
+        $body = $response->json();
+
+        $this->logger?->outgoing(
+            $method,
+            $this->absoluteUrl($path),
+            $requestPayload,
+            $response->status(),
+            is_array($body) ? $body : ['body' => $response->body()],
+        );
     }
 
     protected function toObject(Response $response): TapObject
