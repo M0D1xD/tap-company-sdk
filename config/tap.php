@@ -12,6 +12,10 @@ return [
     | Secret key is required for server-side API calls. Public key is useful
     | for client-side SDKs. Merchant ID is attached by default when set.
     |
+    | After publishing this file you may set values directly (literals, vault
+    | helpers, etc.) instead of env(). You can also call Tap::configure([...])
+    | from a service provider at runtime.
+    |
     */
 
     'secret_key' => env('TAP_SECRET_KEY'),
