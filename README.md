@@ -196,7 +196,7 @@ $disputes = Tap::disputes()->download([/* ... */]);
 
 ## Webhooks
 
-Enable the package route with `TAP_WEBHOOK_ENABLED=true` (default path `/tap/webhook`).
+Enable the package route with `TAP_WEBHOOK_ENABLED=true` (default path `/tap/webhook`). Full setup — configuration, registering `post.url` with Tap, events, and a custom controller — is in [`docs/webhooks.md`](docs/webhooks.md).
 
 The controller validates Tap’s `hashstring` HMAC and dispatches:
 
