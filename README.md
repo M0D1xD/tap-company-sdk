@@ -108,6 +108,40 @@ Optional idempotency:
 Tap::charges()->create($payload, idempotencyKey: $order->id);
 ```
 
+### Typed payment sources
+
+`TapCompany\LaravelSdk\Data\PaymentSource` gives you autocomplete instead of raw `['id' => 'src_...']` arrays. It implements `Arrayable`/`JsonSerializable`, so an instance can be dropped straight into the `source` key of any charge/authorization payload:
+
+```php
+use TapCompany\LaravelSdk\Data\PaymentSource;
+
+Tap::charges()->create([
+    'amount' => 10,
+    'currency' => 'KWD',
+    'customer' => ['first_name' => 'John', 'email' => 'john@example.com'],
+    'source' => PaymentSource::knet(), // or ->all(), ->card(), ->applePay(), ->mada(), ->fawry(), ->stcPay(), ...
+    'redirect' => ['url' => route('checkout.callback')],
+]);
+
+// A previously saved card or token also has a typed constructor:
+PaymentSource::savedCard('card_xxx');
+PaymentSource::token('tok_xxx');
+```
+
+Available named constructors: `card()`, `all()`, `applePay()`, `googlePay()`, `samsungPay()`, `knet()`, `mada()`, `stcPay()`, `fawry()`, `benefit()`, `benefitPay()`, `qpay()`, `omannet()`, `tabbyInstallment()`, `token(string $id)`, `savedCard(string $id, bool $onFile = true)`, `encryptedCard(string $encrypted, bool $onFile = false)`, or `of(PaymentSourceId|string $id)` for anything else. The full backing list of ids lives in the `TapCompany\LaravelSdk\Enums\PaymentSourceId` enum.
+
+`TapCompany\LaravelSdk\Enums\ChargeStatus` mirrors the `status` values Tap returns on a charge (`CAPTURED`, `DECLINED`, `INITIATED`, ...) with `isSuccessful()`/`isTerminal()` helpers:
+
+```php
+use TapCompany\LaravelSdk\Enums\ChargeStatus;
+
+$status = ChargeStatus::from($charge['status']);
+
+if ($status->isSuccessful()) {
+    // ...
+}
+```
+
 ## Authorize and capture
 
 ```php
