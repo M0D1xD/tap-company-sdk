@@ -265,4 +265,31 @@ $charge = Tap::charges()->create([
 return redirect()->away(data_get($charge->toArray(), 'transaction.url'));
 ```
 
+### Typed payment sources
+
+`source` also accepts a `TapCompany\LaravelSdk\Data\PaymentSource` instance instead of a raw array, for IDE autocomplete over the valid `source.id` values:
+
+```php
+use TapCompany\LaravelSdk\Data\PaymentSource;
+use TapCompany\LaravelSdk\Enums\ChargeStatus;
+use TapCompany\LaravelSdk\Facades\Tap;
+
+$charge = Tap::charges()->create([
+    'amount' => 10,
+    'currency' => 'AED',
+    'customer' => [
+        'first_name' => 'Waleed',
+        'email' => 'w.asghar@tap.company',
+    ],
+    'source' => PaymentSource::knet(), // ->all(), ->card(), ->applePay(), ->mada(), ->fawry(), ->stcPay(), ->benefit(), ->benefitPay(), ->qpay(), ->omannet(), ->tabbyInstallment(), ->token($id), ->savedCard($id)
+    'redirect' => ['url' => 'https://example.com/redirect'],
+]);
+
+if (ChargeStatus::from($charge['status'])->isSuccessful()) {
+    // ...
+}
+```
+
+The full list of known ids lives in `TapCompany\LaravelSdk\Enums\PaymentSourceId`.
+
 _Samples adapted from Tap’s public reference docs. Field names match the API; placeholder URLs/IDs are from Tap examples._
