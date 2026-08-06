@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/M0D1xD/tap-company-sdk/compare/v1.2.0...v1.3.0) (2026-08-06)
+
+
+### Features
+
+* **charges:** add typed payment sources and charge status enum ([47a682e](https://github.com/M0D1xD/tap-company-sdk/commit/47a682e861d42f1492cede4e27dd206a4c9b0191))
+
 ## [1.2.0](https://github.com/M0D1xD/tap-company-sdk/compare/v1.1.0...v1.2.0) (2026-08-02)
 
 
