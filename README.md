@@ -34,11 +34,23 @@ TAP_BASE_URL=https://api.tap.company/v2/
 TAP_WEBHOOK_ENABLED=true
 TAP_WEBHOOK_PATH=tap/webhook
 TAP_LOGGING_ENABLED=true
+TAP_DEBUG=false
 ```
 
 ### Request logging
 
-Set `TAP_LOGGING_ENABLED=true` to write every outgoing API call and incoming webhook (method, URL/path, status, and payloads) to `storage/logs/tap.log` via the dedicated `tap` log channel. Disable bodies with `TAP_LOGGING_PAYLOADS=false`, or point `TAP_LOGGING_CHANNEL` at another Laravel channel (e.g. `stack`) if you prefer.
+Set `TAP_LOGGING_ENABLED=true` to write every outgoing API call and incoming webhook to `storage/logs/tap.log` via the dedicated `tap` log channel. Outgoing entries include method, URL, status, redacted headers, and the JSON body actually sent (so `PaymentSource` objects log as `{"id":"src_kw.knet"}`). Disable bodies with `TAP_LOGGING_PAYLOADS=false` (headers are still recorded), or point `TAP_LOGGING_CHANNEL` at another Laravel channel (e.g. `stack`) if you prefer.
+
+### Debugging requests
+
+Set `TAP_DEBUG=true` to dump each outgoing request (redacted headers and JSON body) to the console or browser before it is sent. For a single call:
+
+```php
+Tap::dump()->charges()->create($payload); // print, then send
+Tap::dd()->charges()->create($payload);   // print and halt before sending
+```
+
+`Tap::dd()` is code-only — there is no env flag that can halt requests in production. Secrets such as the Bearer token are always redacted.
 
 ### Published config
 
