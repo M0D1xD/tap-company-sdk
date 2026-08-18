@@ -27,6 +27,8 @@ use TapCompany\LaravelSdk\Webhooks\SignatureValidator;
 /**
  * @method static TapHttpClient client()
  * @method static SignatureValidator webhooks()
+ * @method static \TapCompany\LaravelSdk\Tap dump()
+ * @method static \TapCompany\LaravelSdk\Tap dd()
  * @method static Charges charges()
  * @method static Authorizations authorizations()
  * @method static Refunds refunds()
