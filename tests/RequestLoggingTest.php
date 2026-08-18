@@ -7,7 +7,12 @@ namespace TapCompany\LaravelSdk\Tests;
 use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
+use RuntimeException;
+use TapCompany\LaravelSdk\Data\PaymentSource;
 use TapCompany\LaravelSdk\Facades\Tap;
+use TapCompany\LaravelSdk\Http\TapHttpClient;
+use TapCompany\LaravelSdk\Support\TapRequestLogger;
+use TapCompany\LaravelSdk\Tap as TapSdk;
 
 class RequestLoggingTest extends TestCase
 {
@@ -68,8 +73,61 @@ class RequestLoggingTest extends TestCase
                 && ($context['request']['amount'] ?? null) === 1
                 && ($context['request']['secret_key'] ?? null) === '[redacted]'
                 && ($context['response']['id'] ?? null) === 'chg_1'
+                && $this->headerValue($context['headers'] ?? [], 'Authorization') === '[redacted]'
                 && ! str_contains($encoded, 'sk_test_example')
                 && ! str_contains($encoded, 'Bearer ');
+        });
+    }
+
+    public function test_it_logs_payment_source_as_wire_json(): void
+    {
+        Event::fake([MessageLogged::class]);
+        config([
+            'tap.logging.enabled' => true,
+            'tap.logging.log_payloads' => true,
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'api.tap.company/v2/charges*' => Http::response(['id' => 'chg_1'], 200),
+        ]);
+
+        Tap::charges()->create([
+            'amount' => 1,
+            'currency' => 'KWD',
+            'source' => PaymentSource::knet(),
+        ]);
+
+        Event::assertDispatched(MessageLogged::class, function (MessageLogged $log): bool {
+            if ($log->message !== 'Tap outgoing request') {
+                return false;
+            }
+
+            $context = $log->context;
+
+            return ($context['request']['source'] ?? null) === ['id' => 'src_kw.knet']
+                && ($context['request']['merchant']['id'] ?? null) === '599424';
+        });
+    }
+
+    public function test_it_logs_idempotency_key_header(): void
+    {
+        Event::fake([MessageLogged::class]);
+        config(['tap.logging.enabled' => true]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'api.tap.company/v2/charges*' => Http::response(['id' => 'chg_1'], 200),
+        ]);
+
+        Tap::charges()->create(['amount' => 1, 'currency' => 'KWD'], 'order-100');
+
+        Event::assertDispatched(MessageLogged::class, function (MessageLogged $log): bool {
+            if ($log->message !== 'Tap outgoing request') {
+                return false;
+            }
+
+            return $this->headerValue($log->context['headers'] ?? [], 'Idempotency-Key') === 'order-100';
         });
     }
 
@@ -97,6 +155,7 @@ class RequestLoggingTest extends TestCase
 
             return ($context['direction'] ?? null) === 'outgoing'
                 && ($context['status'] ?? null) === 200
+                && $this->headerValue($context['headers'] ?? [], 'Authorization') === '[redacted]'
                 && ! array_key_exists('request', $context)
                 && ! array_key_exists('response', $context);
         });
@@ -149,5 +208,118 @@ class RequestLoggingTest extends TestCase
         $this->assertIsArray($channel);
         $this->assertSame('single', $channel['driver']);
         $this->assertSame(storage_path('logs/tap.log'), $channel['path']);
+    }
+
+    public function test_it_dumps_outgoing_requests_when_debug_dump_is_enabled(): void
+    {
+        $dumps = [];
+        $this->swapLogger(new TapRequestLogger(
+            dumper: function (array $snapshot) use (&$dumps): void {
+                $dumps[] = $snapshot;
+            },
+            terminator: function (): never {
+                throw new RuntimeException('should not halt');
+            },
+        ));
+
+        config(['tap.debug.dump' => true]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'api.tap.company/v2/charges*' => Http::response(['id' => 'chg_1'], 200),
+        ]);
+
+        Tap::charges()->create([
+            'amount' => 1,
+            'currency' => 'KWD',
+            'source' => PaymentSource::knet(),
+        ]);
+
+        $this->assertCount(1, $dumps);
+        $this->assertSame('POST', $dumps[0]['method']);
+        $this->assertSame(['id' => 'src_kw.knet'], $dumps[0]['body']['source']);
+        $this->assertSame('[redacted]', $this->headerValue($dumps[0]['headers'], 'Authorization'));
+        $this->assertSame('599424', $dumps[0]['body']['merchant']['id']);
+        Http::assertSentCount(1);
+    }
+
+    public function test_dump_enables_inspection_without_debug_config(): void
+    {
+        $dumps = [];
+        $this->swapLogger(new TapRequestLogger(
+            dumper: function (array $snapshot) use (&$dumps): void {
+                $dumps[] = $snapshot;
+            },
+        ));
+
+        config(['tap.debug.dump' => false]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'api.tap.company/v2/charges*' => Http::response(['id' => 'chg_1'], 200),
+        ]);
+
+        Tap::dump()->charges()->create([
+            'amount' => 1,
+            'currency' => 'KWD',
+        ]);
+
+        $this->assertCount(1, $dumps);
+        $this->assertSame(1, $dumps[0]['body']['amount']);
+        Http::assertSentCount(1);
+    }
+
+    public function test_dd_halts_before_sending(): void
+    {
+        $dumps = [];
+        $this->swapLogger(new TapRequestLogger(
+            dumper: function (array $snapshot) use (&$dumps): void {
+                $dumps[] = $snapshot;
+            },
+            terminator: function (): never {
+                throw new RuntimeException('tap dd halt');
+            },
+        ));
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'api.tap.company/v2/charges*' => Http::response(['id' => 'chg_1'], 200),
+        ]);
+
+        try {
+            Tap::dd()->charges()->create([
+                'amount' => 1,
+                'currency' => 'KWD',
+            ]);
+            $this->fail('Expected Tap::dd() to halt before sending.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('tap dd halt', $exception->getMessage());
+        }
+
+        $this->assertCount(1, $dumps);
+        $this->assertSame('POST', $dumps[0]['method']);
+        Http::assertNothingSent();
+    }
+
+    protected function swapLogger(TapRequestLogger $logger): void
+    {
+        $this->app->instance(TapRequestLogger::class, $logger);
+        $this->app->forgetInstance(TapHttpClient::class);
+        $this->app->forgetInstance(TapSdk::class);
+        Tap::clearResolvedInstance(TapSdk::class);
+    }
+
+    /**
+     * @param  array<string, string>  $headers
+     */
+    protected function headerValue(array $headers, string $name): ?string
+    {
+        foreach ($headers as $header => $value) {
+            if (strcasecmp($header, $name) === 0) {
+                return $value;
+            }
+        }
+
+        return null;
     }
 }

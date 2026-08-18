@@ -6,6 +6,7 @@ namespace TapCompany\LaravelSdk\Http;
 
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Request;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -16,6 +17,15 @@ use TapCompany\LaravelSdk\Support\TapRequestLogger;
 
 class TapHttpClient
 {
+    protected bool $dumpRequests = false;
+
+    protected bool $ddNextRequest = false;
+
+    /** @var array{method: string, url: string, headers: array<string, string>, body: array<string, mixed>}|null */
+    protected ?array $lastRequestSnapshot = null;
+
+    protected TapRequestLogger $logger;
+
     public function __construct(
         protected string $secretKey,
         protected string $baseUrl,
@@ -23,7 +33,7 @@ class TapHttpClient
         protected int $connectTimeout = 5,
         protected int $retryTimes = 2,
         protected int $retrySleep = 200,
-        protected ?TapRequestLogger $logger = null,
+        ?TapRequestLogger $logger = null,
     ) {
         if ($this->secretKey === '') {
             throw new TapException(
@@ -31,7 +41,27 @@ class TapHttpClient
             );
         }
 
-        $this->logger ??= new TapRequestLogger;
+        $this->logger = $logger ?? new TapRequestLogger;
+    }
+
+    /**
+     * Dump each subsequent outgoing request (redacted) before it is sent.
+     */
+    public function dump(): static
+    {
+        $this->dumpRequests = true;
+
+        return $this;
+    }
+
+    /**
+     * Dump the next outgoing request (redacted) and halt before it is sent.
+     */
+    public function dd(): static
+    {
+        $this->ddNextRequest = true;
+
+        return $this;
     }
 
     /**
@@ -112,11 +142,11 @@ class TapHttpClient
             default => $request->post($normalizedPath, $payload),
         };
 
-        $this->logger?->outgoing(
+        $this->logOutgoing(
             $method,
-            $this->absoluteUrl($normalizedPath),
+            $normalizedPath,
             $payload,
-            $response->status(),
+            $response,
             '[binary body omitted]',
         );
 
@@ -199,6 +229,12 @@ class TapHttpClient
             $request = $request->withHeaders($headers);
         }
 
+        if ($this->shouldCaptureRequest()) {
+            $request = $request->beforeSending(function (Request $httpRequest): void {
+                $this->captureOutgoing($httpRequest);
+            });
+        }
+
         return $request;
     }
 
@@ -214,18 +250,51 @@ class TapHttpClient
 
     /**
      * @param  array<string, mixed>  $requestPayload
+     * @param  array<string, mixed>|string|null  $responsePayload
      */
-    protected function logOutgoing(string $method, string $path, array $requestPayload, Response $response): void
-    {
-        $body = $response->json();
+    protected function logOutgoing(
+        string $method,
+        string $path,
+        array $requestPayload,
+        Response $response,
+        array|string|null $responsePayload = null,
+    ): void {
+        if ($responsePayload === null) {
+            $body = $response->json();
+            $responsePayload = is_array($body) ? $body : ['body' => $response->body()];
+        }
 
-        $this->logger?->outgoing(
-            $method,
-            $this->absoluteUrl($path),
-            $requestPayload,
+        $snapshot = $this->lastRequestSnapshot;
+        $this->lastRequestSnapshot = null;
+
+        $this->logger->outgoing(
+            $snapshot['method'] ?? $method,
+            $snapshot['url'] ?? $this->absoluteUrl($path),
+            $snapshot['body'] ?? $requestPayload,
             $response->status(),
-            is_array($body) ? $body : ['body' => $response->body()],
+            $responsePayload,
+            $snapshot['headers'] ?? null,
         );
+    }
+
+    protected function shouldCaptureRequest(): bool
+    {
+        return $this->dumpRequests
+            || $this->ddNextRequest
+            || (bool) config('tap.debug.dump', false)
+            || (bool) config('tap.logging.enabled', false);
+    }
+
+    protected function captureOutgoing(Request $httpRequest): void
+    {
+        $this->lastRequestSnapshot = $this->logger->snapshot($httpRequest);
+
+        $halt = $this->ddNextRequest;
+        $this->ddNextRequest = false;
+
+        if ($halt || $this->dumpRequests || (bool) config('tap.debug.dump', false)) {
+            $this->logger->inspect($this->lastRequestSnapshot, halt: $halt);
+        }
     }
 
     protected function toObject(Response $response): TapObject

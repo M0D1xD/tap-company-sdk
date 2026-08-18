@@ -66,7 +66,8 @@ return [
     |--------------------------------------------------------------------------
     |
     | When enabled, outgoing API calls and incoming webhooks are written to
-    | the configured log channel (default: storage/logs/tap.log).
+    | the configured log channel (default: storage/logs/tap.log). Outgoing
+    | entries include redacted headers and the JSON body actually sent.
     |
     */
 
@@ -77,6 +78,21 @@ return [
         // Relative to storage/logs unless absolute; default tap.log
         'path' => env('TAP_LOGGING_PATH', 'tap.log'),
         'log_payloads' => (bool) env('TAP_LOGGING_PAYLOADS', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Request Debugging
+    |--------------------------------------------------------------------------
+    |
+    | When dump is enabled, each outgoing API call is printed (redacted
+    | headers and JSON body) before it is sent. Tap::dd() always dumps
+    | and halts the next request; it cannot be turned on from env.
+    |
+    */
+
+    'debug' => [
+        'dump' => (bool) env('TAP_DEBUG', false),
     ],
 
 ];

@@ -88,6 +88,26 @@ class Tap
         return $this->signatureValidator;
     }
 
+    /**
+     * Dump each subsequent outgoing request (redacted) before it is sent.
+     */
+    public function dump(): static
+    {
+        $this->client->dump();
+
+        return $this;
+    }
+
+    /**
+     * Dump the next outgoing request (redacted) and halt before it is sent.
+     */
+    public function dd(): static
+    {
+        $this->client->dd();
+
+        return $this;
+    }
+
     public function charges(): Charges
     {
         return $this->charges ??= new Charges($this->client);
