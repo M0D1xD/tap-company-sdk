@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/M0D1xD/tap-company-sdk/compare/v1.3.0...v1.4.0) (2026-08-18)
+
+
+### Features
+
+* add request payload dump/dd and wire-accurate logging ([76762d0](https://github.com/M0D1xD/tap-company-sdk/commit/76762d019c9f66426e5681da761b4ac1329ef708))
+
 ## [1.3.0](https://github.com/M0D1xD/tap-company-sdk/compare/v1.2.0...v1.3.0) (2026-08-06)
 
 
